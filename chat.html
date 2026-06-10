@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cartela Bot - Criar Vídeo</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+*{font-family:'Inter',sans-serif}
+body{background:#0f172a}
+.chat-container{max-width:800px;margin:0 auto;height:100vh;display:flex;flex-direction:column}
+.chat-header{background:linear-gradient(135deg,#1e293b,#0f172a);border-bottom:1px solid #1e3a5f;padding:16px 24px;flex-shrink:0}
+.chat-header h1{color:#60a5fa;font-size:20px;font-weight:700}
+.chat-header p{color:#94a3b8;font-size:13px;margin-top:2px}
+.messages{flex:1;overflow-y:auto;padding:20px 16px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
+.messages::-webkit-scrollbar{width:5px}
+.messages::-webkit-scrollbar-track{background:transparent}
+.messages::-webkit-scrollbar-thumb{background:#334155;border-radius:10px}
+.msg{max-width:85%;padding:12px 16px;border-radius:16px;font-size:15px;line-height:1.5;animation:slideUp .3s ease}
+.msg.bot{align-self:flex-start;background:#1e293b;color:#e2e8f0;border-bottom-left-radius:4px}
+.msg.user{align-self:flex-end;background:#2563eb;color:white;border-bottom-right-radius:4px}
+.msg.system{align-self:center;background:#1a2e1a;color:#86efac;font-size:13px;text-align:center;border-radius:12px;padding:8px 20px}
+.msg.system.error{background:#2d1a1a;color:#fca5a5}
+.msg.typing{align-self:flex-start;background:#1e293b;color:#94a3b8;padding:14px 20px;border-bottom-left-radius:4px;display:flex;gap:4px}
+.typing-dot{width:8px;height:8px;border-radius:50%;background:#60a5fa;animation:typing 1.4s infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes typing{0%,60%,100%{opacity:.3;transform:scale(.8)}30%{opacity:1;transform:scale(1.2)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.input-area{background:#1e293b;border-top:1px solid #1e3a5f;padding:12px 16px;flex-shrink:0;display:flex;gap:8px;align-items:flex-end}
+.input-area textarea{flex:1;background:#0f172a;border:1px solid #334155;border-radius:12px;padding:10px 14px;color:white;font-size:14px;resize:none;outline:none;max-height:100px;transition:border-color .2s}
+.input-area textarea:focus{border-color:#60a5fa}
+.input-area textarea::placeholder{color:#475569}
+.input-area button{background:#2563eb;border:none;border-radius:12px;padding:10px 18px;color:white;font-weight:600;font-size:14px;cursor:pointer;transition:background .2s;white-space:nowrap}
+.input-area button:hover{background:#1d4ed8}
+.input-area button:disabled{background:#475569;cursor:not-allowed}
+.product-card{background:#0f172a;border:1px solid #1e3a5f;border-radius:12px;padding:12px;position:relative;margin-top:8px;max-width:300px}
+.product-card .name{color:#e2e8f0;font-weight:600;font-size:14px}
+.product-card .prices{color:#94a3b8;font-size:12px;margin-top:4px}
+.product-card .price-new{color:#22c55e;font-weight:700;font-size:16px}
+.product-card .price-old{color:#ef4444;text-decoration:line-through;font-size:13px}
+.product-card img{width:100%;height:120px;object-fit:contain;border-radius:8px;margin-top:8px;background:#1a1a2e}
+.status-bar{background:#0f172a;border-radius:8px;padding:8px 14px;display:flex;align-items:center;gap:8px;font-size:13px;color:#94a3b8}
+.status-bar .spinner{width:16px;height:16px;border:2px solid #334155;border-top-color:#60a5fa;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.badge-btn,.template-btn{background:#1e293b;border:1px solid #334155;border-radius:20px;padding:6px 14px;color:#e2e8f0;font-size:13px;cursor:pointer;transition:all .2s}
+.badge-btn:hover,.template-btn:hover{background:#334155;border-color:#60a5fa}
+.back-btn{background:transparent;border:1px solid #475569;border-radius:8px;padding:4px 10px;color:#94a3b8;font-size:12px;cursor:pointer;transition:all .2s;margin-top:6px;display:inline-block}
+.back-btn:hover{border-color:#60a5fa;color:#60a5fa}
+.products-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.product-mini{display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #1e3a5f;border-radius:8px;padding:8px 10px;font-size:13px}
+.product-mini .p-name{color:#e2e8f0;font-weight:600;flex:1}
+.product-mini .p-price{color:#22c55e;font-weight:700}
+.product-mini .p-del{color:#ef4444;font-size:11px;text-decoration:line-through}
+.product-mini .p-img{width:32px;height:32px;border-radius:4px;object-fit:cover;background:#1a1a2e}
+</style>
+</head>
+<body>
+<div class="chat-container">
+  <div class="chat-header">
+    <h1>🎬 Criador de Vídeos</h1>
+    <p>Conte o que você precisa que eu crio o vídeo para você</p>
+  </div>
+  <div class="messages" id="messages"></div>
+  <div class="input-area">
+    <textarea id="chatInput" rows="1" placeholder="Digite sua mensagem..." style="flex:1;background:#0f172a;border:1px solid #334155;border-radius:12px;padding:10px 14px;color:white;font-size:14px;resize:none;outline:none;max-height:100px" oninput="autoResize(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
+    <button id="sendBtn" style="background:#2563eb;border:none;border-radius:12px;padding:10px 18px;color:white;font-weight:600;font-size:14px;cursor:pointer">Enviar</button>
+  </div>
+</div>
+
+<script>
+const state = {
+  step: 'welcome',
+  storeName: '',
+  ownerName: '',
+  products: [],
+  editingProduct: null,
+  selectedBadge: null,
+  selectedTemplate: null,
+  selectedTemplateId: null,
+  voiceName: 'Joseildo',
+  voices: [],
+  templates: [],
+  isProcessing: false,
+  productCount: 0
+};
+
+const messages = document.getElementById('messages');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function scrollDown() {
+  setTimeout(() => messages.scrollTop = messages.scrollHeight, 50);
+}
+
+function addMsg(text, type = 'bot') {
+  const div = document.createElement('div');
+  div.className = 'msg ' + type;
+  if (type === 'bot' || type === 'system') {
+    div.innerHTML = text;
+  } else {
+    div.textContent = text;
+  }
+  messages.appendChild(div);
+  scrollDown();
+}
+
+function showTyping() {
+  const div = document.createElement('div');
+  div.className = 'msg typing';
+  div.id = 'typingIndicator';
+  div.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+  messages.appendChild(div);
+  scrollDown();
+}
+
+function hideTyping() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+function setPlaceholder(text) {
+  chatInput.placeholder = text;
+  chatInput.disabled = false;
+  sendBtn.disabled = false;
+  chatInput.focus();
+}
+
+function disableInput() {
+  chatInput.disabled = true;
+  sendBtn.disabled = true;
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function botSay(text, ms = 600) {
+  showTyping();
+  await delay(ms);
+  hideTyping();
+  addMsg(text, 'bot');
+}
+
+function escapeHtml(t) {
+  const d = document.createElement('div');
+  d.textContent = t;
+  return d.innerHTML;
+}
+
+function showError(msg) {
+  addMsg('<div class="status-bar error" style="background:#7f1d1d;color:#fca5a5">❌ ' + escapeHtml(msg) + '</div>', 'system');
+}
+
+function showSuccess(msg) {
+  addMsg('<div class="status-bar" style="background:#14532d">✅ ' + escapeHtml(msg) + '</div>', 'system');
+}
+
+function showSpinner(msg) {
+  addMsg('<div class="status-bar"><span class="spinner"></span> ' + escapeHtml(msg) + '</div>', 'system');
+}
+
+function parsePrice(text) {
+  const cleaned = text.replace(/[^\d,\.]/g, '');
+  const matches = [...cleaned.matchAll(/(\d+[.,]\d{1,2})/g)];
+  const prices = matches.map(m => m[1].replace(',', '.'));
+  return prices;
+}
+
+function buildProductsListHTML() {
+  let html = '<div class="products-list">';
+  state.products.forEach((p, i) => {
+    html += '<div class="product-mini">';
+    if (p.img) html += '<img class="p-img" src="' + p.img + '">';
+    html += '<span class="p-name">' + escapeHtml(p.name) + '</span>';
+    if (p.oldPrice) html += '<span class="p-del">R$ ' + p.oldPrice + '</span>';
+    html += '<span class="p-price">R$ ' + p.newPrice + '</span>';
+    html += '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+// ============ FLOW ============
+async function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text || state.isProcessing) return;
+  chatInput.value = '';
+  autoResize(chatInput);
+  addMsg(text, 'user');
+  await processInput(text);
+}
+
+async function processInput(text) {
+  state.isProcessing = true;
+  try {
+    switch (state.step) {
+      case 'welcome': await handleWelcome(text); break;
+      case 'ask_store': await handleStore(text); break;
+      case 'ask_owner': await handleOwner(text); break;
+      case 'ask_product': await handleProduct(text); break;
+      case 'ask_product_img': await handleProductImg(text); break;
+      case 'ask_more': await handleMore(text); break;
+      case 'ask_badge': await handleBadge(text); break;
+      case 'ask_template': await handleTemplate(text); break;
+      case 'ask_voice': await handleVoiceFromText(text); break;
+      case 'confirm': await handleConfirm(text); break;
+      default:
+        addMsg('Desculpe, não entendi. Vamos recomeçar?', 'bot');
+        state.step = 'welcome';
+        await botSay('Olá! Como posso ajudar você hoje?');
+        setPlaceholder('Quero criar um vídeo!');
+    }
+  } catch(e) {
+    console.error('Erro no processInput:', e);
+    showError('Erro inesperado: ' + e.message);
+  } finally {
+    state.isProcessing = false;
+  }
+}
+
+function addBackButton(step) {
+  return '<button class="back-btn" onclick="goBack(\'' + step + '\')">← Voltar</button>';
+}
+
+window.goBack = function(targetStep) {
+  if (state.isProcessing) return;
+  addMsg('← Voltar', 'user');
+  
+  const steps = ['welcome','ask_store','ask_owner','ask_product','ask_product_img','ask_more','ask_badge','ask_template','ask_voice','confirm'];
+  const targetIdx = steps.indexOf(targetStep);
+  
+  if (targetStep === 'ask_store') {
+    state.step = 'ask_store';
+    botSay('Qual o <b>nome do seu estabelecimento</b>?');
+    setPlaceholder('Ex: Supermercado Bom Preço');
+  } else if (targetStep === 'ask_owner') {
+    state.step = 'ask_owner';
+    botSay('Qual o <b>seu nome</b>?');
+    setPlaceholder('Ex: João Silva');
+  } else if (targetStep === 'ask_product') {
+    state.products = [];
+    state.step = 'ask_product';
+    botSay('Agora me envie os <b>produtos</b>. Você pode adicionar de 1 a 5.<br><br>Formato:<br><b>Nome, Preço antigo, Preço novo</b>');
+    setPlaceholder('Ex: Picanha, De R$ 69,90, Por R$ 54,90');
+  } else if (targetStep === 'ask_badge') {
+    state.step = 'ask_badge';
+    showBadgeOptions();
+  } else if (targetStep === 'ask_template') {
+    state.step = 'ask_template';
+    showTemplateOptions();
+  } else if (targetStep === 'ask_voice') {
+    state.step = 'ask_voice';
+    showVoiceOptions();
+  }
+};
+
+async function handleWelcome(text) {
+  const l = text.toLowerCase();
+  if (l.includes('criar') || l.includes('video') || l.includes('vídeo') || l.includes('sim') || l.includes('começar') || l.includes('quero')) {
+    await botSay('Ótimo! Vou te ajudar a criar um vídeo de ofertas! 🎉');
+    await delay(300);
+    state.step = 'ask_store';
+    await botSay('Qual o <b>nome do seu estabelecimento</b>?<br><span style="color:#94a3b8;font-size:13px">Ex: Supermercado Bom Preço, Açougue do Zé...</span>');
+    setPlaceholder('Ex: Supermercado Bom Preço');
+  } else {
+    await botSay('Sem problemas! Quando quiser criar um vídeo, é só me chamar. 😊');
+    setPlaceholder('Quero criar um vídeo!');
+  }
+}
+
+async function handleStore(text) {
+  state.storeName = text.trim();
+  await botSay('✅ Anotado: <b>' + escapeHtml(text.trim()) + '</b>');
+  await delay(300);
+  state.step = 'ask_owner';
+  await botSay('Qual o <b>seu nome</b>?');
+  setPlaceholder('Ex: João Silva');
+}
+
+async function handleOwner(text) {
+  state.ownerName = text.trim();
+  await botSay('Prazer, ' + escapeHtml(text.trim()) + '! 👋');
+  await delay(300);
+  state.step = 'ask_product';
+  state.products = [];
+  state.productCount = 0;
+  await botSay('Agora me envie os <b>produtos</b>. Você pode adicionar de 1 a 5.<br><br>Formato:<br><b>Nome, Preço antigo, Preço novo</b><br><br><span style="color:#94a3b8;font-size:13px">Ex: Picanha, De R$ 69,90, Por R$ 54,90</span>');
+  setPlaceholder('Ex: Picanha, De R$ 69,90, Por R$ 54,90');
+}
+
+async function handleProduct(text) {
+  if (text.toLowerCase() === 'listar' || text.toLowerCase() === 'ver') {
+    if (state.products.length > 0) {
+      addMsg('📦 Produtos adicionados:', 'system');
+      addMsg(buildProductsListHTML(), 'bot');
+    } else {
+      addMsg('Nenhum produto adicionado ainda.', 'system');
+    }
+    return;
+  }
+  
+  const priceMatches = [...text.matchAll(/R\$\s*([\d]+[.,][\d]{2})/gi)];
+  const prices = priceMatches.map(m => m[1].replace(',', '.'));
+  
+  let oldPrice = '', newPrice = '';
+  if (prices.length >= 2) {
+    oldPrice = prices[0];
+    newPrice = prices[1];
+  } else if (prices.length === 1) {
+    newPrice = prices[0];
+  }
+  
+  if (!newPrice) {
+    await botSay('Preciso do <b>preço</b> para criar o card. Pode informar?<br><span style="color:#94a3b8;font-size:13px">Ex: Picanha, De R$ 69,90, Por R$ 54,90</span>');
+    return;
+  }
+  
+  let name = text;
+  if (prices.length >= 2) {
+    const lastPriceIdx = text.lastIndexOf('R$');
+    const secondLastPriceIdx = text.lastIndexOf('R$', lastPriceIdx - 1);
+    if (secondLastPriceIdx > 0) {
+      name = text.substring(0, secondLastPriceIdx).replace(/[,]\s*$/, '').trim();
+    }
+  } else if (prices.length === 1) {
+    const lastPriceIdx = text.lastIndexOf('R$');
+    if (lastPriceIdx > 0) {
+      name = text.substring(0, lastPriceIdx).replace(/[,]\s*$/, '').trim();
+    }
+  }
+  
+  name = name.replace(/^.*?(De|Por|por|de)\s*R\$\s*[\d.,]+\s*/gi, '').trim();
+  if (!name) name = text.split(',')[0].trim();
+  
+  state.editingProduct = { name, oldPrice, newPrice, img: null };
+  state.step = 'ask_product_img';
+  
+  let html = '<div class="product-card">';
+  html += '<div class="name">' + escapeHtml(name) + '</div>';
+  html += '<div class="prices">';
+  if (oldPrice) html += '<div class="price-old">De: R$ ' + oldPrice + '</div>';
+  html += '<div class="price-new">Por: R$ ' + newPrice + '</div>';
+  html += '</div></div>';
+  html += '<span style="color:#94a3b8;font-size:12px">Produto ' + (state.products.length + 1) + '</span>';
+  addMsg(html, 'bot');
+  
+  await delay(300);
+  await botSay('Tem uma <b>foto do produto</b>? 📷 (opcional)<br><span style="color:#94a3b8;font-size:13px">Cole (Ctrl+V), arraste uma imagem, ou digite "pular"</span>');
+  setPlaceholder('Envie a foto ou digite "pular"');
+}
+
+async function handleProductImg(text) {
+  const l = text.toLowerCase();
+  if (l.includes('pular') || l.includes('não') || l.includes('nao') || l.includes('sem') || l === 'ok') {
+    // Skip image
+  } else if (text.startsWith('data:image')) {
+    state.editingProduct.img = text;
+    addMsg('✅ Imagem adicionada ao produto!', 'system');
+  } else {
+    await botSay('Envie a foto (cole, arraste) ou digite "pular" para seguir sem imagem.');
+    return;
+  }
+  
+  await finalizeProduct();
+}
+
+async function finalizeProduct() {
+  state.products.push({...state.editingProduct});
+  state.editingProduct = null;
+  state.productCount = state.products.length;
+  
+  addMsg('📦 Produto adicionado! (' + state.products.length + '/5)', 'system');
+  
+  if (state.products.length >= 5) {
+    await doneProducts();
+  } else {
+    state.step = 'ask_more';
+    await botSay('Deseja <b>adicionar mais um</b> produto?<br><span style="color:#94a3b8;font-size:13px">Sim para adicionar, Não para continuar</span>');
+    setPlaceholder('Sim / Não');
+  }
+}
+
+async function handleMore(text) {
+  const l = text.toLowerCase();
+  if (l.startsWith('s') || l.includes('sim') || l.includes('mais') || l.includes('outro')) {
+    state.step = 'ask_product';
+    await botSay('Envie o próximo produto:<br><b>Nome, Preço antigo, Preço novo</b>');
+    setPlaceholder('Ex: Alcatra, De R$ 44,90, Por R$ 37,98');
+  } else {
+    await doneProducts();
+  }
+}
+
+async function doneProducts() {
+  if (state.products.length === 0) {
+    await botSay('Precisamos de pelo menos 1 produto! 😅');
+    state.step = 'ask_product';
+    setPlaceholder('Ex: Picanha, De R$ 69,90, Por R$ 54,90');
+    return;
+  }
+  
+  addMsg('📦 <b>' + state.products.length + ' produto(s)</b> cadastrado(s)! 🎉', 'bot');
+  addMsg(buildProductsListHTML(), 'bot');
+  await delay(300);
+  
+  showBadgeOptions();
+}
+
+function showBadgeOptions() {
+  state.step = 'ask_badge';
+  const badges = ['⚡ Flash', '🔥 Oferta', '💥 Promoção', '🏷️ Desconto', '⭐ Destaque'];
+  let html = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0">';
+  badges.forEach((b, i) => {
+    html += '<button onclick="selectBadge(' + i + ')" class="badge-btn">' + b + '</button>';
+  });
+  html += '</div>';
+  html += addBackButton('ask_store');
+  addMsg('Escolha um <b>selo</b> para destacar no vídeo:' + html, 'bot');
+  setPlaceholder('Clique no selo acima');
+}
+
+window.selectBadge = function(idx) {
+  const badges = ['⚡ Flash', '🔥 Oferta', '💥 Promoção', '🏷️ Desconto', '⭐ Destaque'];
+  if (state.step !== 'ask_badge') return;
+  state.selectedBadge = badges[idx];
+  addMsg(badges[idx], 'user');
+  handleBadge(badges[idx]);
+};
+
+async function handleBadge(text) {
+  if (state.selectedBadge) {
+    await botSay('Selo: <b>' + escapeHtml(state.selectedBadge) + '</b> ✅');
+  }
+  await delay(300);
+  showTemplateOptions();
+}
+
+async function showTemplateOptions() {
+  state.step = 'ask_template';
+  
+  if (state.templates.length === 0) {
+    try {
+      const res = await fetch('/templates');
+      if (res.ok) {
+        const data = await res.json();
+        state.templates = data.templates || [];
+      }
+    } catch(e) {
+      console.error('Erro ao buscar templates:', e);
+    }
+  }
+  
+  if (state.templates.length === 0) {
+    state.templates = [
+      { id: 'classica', name: 'Clássica' },
+      { id: 'flash', name: 'Flash' }
+    ];
+  }
+  
+  let html = '<div style="display:flex;flex-direction:column;gap:8px;margin:8px 0">';
+  state.templates.forEach((t, i) => {
+    html += '<button onclick="selectTemplate(' + i + ')" class="template-btn" style="text-align:left;padding:10px 16px">';
+    html += '<b>' + escapeHtml(t.name) + '</b>';
+    html += '</button>';
+  });
+  html += '</div>';
+  html += addBackButton('ask_badge');
+  addMsg('Escolha o <b>template</b> (estilo visual):' + html, 'bot');
+  setPlaceholder('Clique no template acima');
+}
+
+window.selectTemplate = function(idx) {
+  if (state.step !== 'ask_template') return;
+  const t = state.templates[idx];
+  state.selectedTemplate = t.name;
+  state.selectedTemplateId = t.id;
+  addMsg(t.name, 'user');
+  handleTemplate(t.name);
+};
+
+async function handleTemplate(text) {
+  await botSay('Template: <b>' + state.selectedTemplate.charAt(0).toUpperCase() + state.selectedTemplate.slice(1) + '</b> ✅');
+  await delay(300);
+  showVoiceOptions();
+}
+
+async function showVoiceOptions() {
+  state.step = 'ask_voice';
+  
+  try {
+    const res = await fetch('/tts-voices');
+    if (!res.ok) throw new Error('Status ' + res.status);
+    const data = await res.json();
+    state.voices = data.voices || [];
+  } catch(e) {
+    console.error('Erro ao buscar vozes:', e);
+    state.voices = [{name:'Joseildo',size:0},{name:'Marcos',size:0},{name:'Marlon',size:0}];
+  }
+  
+  let html = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0">';
+  state.voices.forEach((v, i) => {
+    html += '<button onclick="selectVoice(' + i + ')" class="badge-btn" style="font-size:15px;padding:8px 18px">🎤 ' + v.name + '</button>';
+  });
+  html += '</div>';
+  html += addBackButton('ask_template');
+  addMsg('Escolha a <b>voz</b> para a narração:' + html, 'bot');
+  setPlaceholder('Clique na voz acima');
+}
+
+window.selectVoice = function(idx) {
+  if (state.step !== 'ask_voice') return;
+  const v = state.voices[idx];
+  state.voiceName = v.name;
+  addMsg('🎤 ' + v.name, 'user');
+  handleVoiceFromSelect(v.name);
+};
+
+async function handleVoiceFromText(text) {
+  const found = state.voices.find(v => v.name.toLowerCase() === text.toLowerCase());
+  if (found) {
+    state.voiceName = found.name;
+    await handleVoiceFromSelect(found.name);
+  } else {
+    await botSay('Voz não encontrada. Escolha uma das opções acima.');
+  }
+}
+
+async function handleVoiceFromSelect(name) {
+  await botSay('Voz: <b>' + escapeHtml(name) + '</b> ✅');
+  await delay(300);
+  showSummary();
+}
+
+function showSummary() {
+  state.step = 'confirm';
+  
+  let summary = '📋 <b>Resumo do Vídeo</b><br><br>';
+  summary += '🏪 <b>Estabelecimento:</b> ' + escapeHtml(state.storeName) + '<br>';
+  summary += '👤 <b>Seu nome:</b> ' + escapeHtml(state.ownerName) + '<br>';
+  summary += '🏷️ <b>Selo:</b> ' + state.selectedBadge + '<br>';
+  summary += '🎨 <b>Template:</b> ' + state.selectedTemplate.charAt(0).toUpperCase() + state.selectedTemplate.slice(1) + '<br>';
+  summary += '🎤 <b>Voz:</b> ' + state.voiceName + '<br><br>';
+  summary += '📦 <b>Produtos (' + state.products.length + '):</b>';
+  summary += buildProductsListHTML();
+  summary += '<br><span style="color:#94a3b8;font-size:13px">Para alterar algo, digite "loja", "produtos", "selo", "template" ou "voz"</span>';
+  summary += '<br><br>Quer que eu <b>gere o vídeo</b> com narração agora? 🎬';
+  
+  addMsg(summary, 'bot');
+  setPlaceholder('Sim, gerar vídeo!');
+}
+
+// ============ GENERATE ============
+async function handleConfirm(text) {
+  const l = text.toLowerCase();
+  
+  if (l.includes('loja') || l.includes('estabelecimento')) {
+    state.step = 'ask_store';
+    await botSay('Qual o novo <b>nome do estabelecimento</b>?');
+    setPlaceholder('Ex: Supermercado Bom Preço');
+    return;
+  }
+  if (l.includes('produto')) {
+    state.products = [];
+    state.step = 'ask_product';
+    await botSay('Vamos recadastrar os <b>produtos</b>. Envie o primeiro:<br><b>Nome, Preço antigo, Preço novo</b>');
+    setPlaceholder('Ex: Picanha, De R$ 69,90, Por R$ 54,90');
+    return;
+  }
+  if (l.includes('selo') || l.includes('badge')) {
+    showBadgeOptions();
+    return;
+  }
+  if (l.includes('template') || l.includes('estilo')) {
+    showTemplateOptions();
+    return;
+  }
+  if (l.includes('voz') || l.includes('narra')) {
+    showVoiceOptions();
+    return;
+  }
+  
+  if (l.startsWith('s') || l.includes('sim') || l.includes('gerar') || l.includes('ok') || l.includes('criar')) {
+    await generateVideo();
+  } else if (l.startsWith('n') || l.includes('não') || l.includes('nao') || l.includes('cancelar')) {
+    await botSay('Ok! Me diga o que quer alterar ou "sim" para gerar. 😊');
+    setPlaceholder('Sim, gerar vídeo!');
+  } else {
+    await botSay('Não entendi. Diga <b>"sim"</b> para gerar ou o que quer alterar.');
+    setPlaceholder('Sim / produtos / selo / template / voz');
+  }
+}
+
+function priceToWords(priceStr) {
+  if (!priceStr) return '';
+  const cleaned = priceStr.replace(/[^\d,\.]/g, '').replace(',', '.');
+  const parts = cleaned.split('.');
+  const intPart = parseInt(parts[0]) || 0;
+  const decPart = parseInt((parts[1] || '0').padEnd(2, '0').slice(0, 2)) || 0;
+
+  const unidades = ['', 'um', 'dois', 'tres', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove'];
+  const dezenas = ['', 'dez', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+  const especiais = ['dez', 'onze', 'doze', 'treze', 'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
+  const centenas = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+
+  function convertGroup(n) {
+    if (n === 0) return '';
+    if (n === 100) return 'cem';
+    let result = '';
+    const c = Math.floor(n / 100);
+    const d = Math.floor((n % 100) / 10);
+    const u = n % 10;
+    if (c > 0) result += centenas[c];
+    if (n % 100 < 20 && n % 100 >= 10) {
+      if (c > 0) result += ' e ';
+      result += especiais[n % 100 - 10];
+    } else {
+      if (d > 0) {
+        if (result) result += ' e ';
+        result += dezenas[d];
+      }
+      if (u > 0) {
+        if (result) result += ' e ';
+        result += unidades[u];
+      }
+    }
+    return result;
+  }
+
+  let intWords = '';
+  if (intPart === 0) {
+    intWords = 'zero';
+  } else {
+    const milhares = Math.floor(intPart / 1000);
+    const resto = intPart % 1000;
+    if (milhares > 0) {
+      intWords = milhares === 1 ? 'mil' : convertGroup(milhares) + ' mil';
+    }
+    if (resto > 0) {
+      if (intWords) intWords += ' e ';
+      intWords += convertGroup(resto);
+    }
+  }
+
+  const intName = intPart === 1 ? 'real' : 'reais';
+  let result = intWords + ' ' + intName;
+
+  if (decPart > 0) {
+    const decWords = convertGroup(decPart);
+    const decName = decPart === 1 ? 'centavo' : 'centavos';
+    result += ' e ' + decWords + ' ' + decName;
+  }
+
+  return result;
+}
+
+function normalizeForTTS(text) {
+  let t = text;
+  t = t.replace(/R\$\s*([\d.,]+)/g, (_, price) => priceToWords(price));
+  t = t.replace(/(\d+)\s*%/g, (_, n) => numeroPorExtenso(parseInt(n)) + ' por cento');
+  t = t.replace(/(\d{1,2})\s*[\/x]\s*(\d{1,2})\s*[\/x]\s*(\d{2,4})/g, (_, d, m, a) => {
+    return numeroPorExtenso(parseInt(d)) + ' de ' + numeroPorExtenso(parseInt(m)) + ' de ' + numeroPorExtenso(parseInt(a));
+  });
+  t = t.replace(/\b(\d{1,3})\.(\d{3})\.(\d{3})\b/g, (_, m, c, u) => {
+    return numeroPorExtenso(parseInt(m + c + u));
+  });
+  t = t.replace(/\b(\d{1,3})\.(\d{3})\b/g, (_, d, u) => numeroPorExtenso(parseInt(d + u)));
+  t = t.replace(/\b(\d+)[,.](\d{1,2})\b/g, (_, int, dec) => {
+    const price = int + '.' + dec.padEnd(2, '0').slice(0, 2);
+    return priceToWords(price);
+  });
+  t = t.replace(/\b(\d+)\b/g, (_, n) => numeroPorExtenso(parseInt(n)));
+  t = t.replace(/[@#$%&*+=<>]/g, ' ');
+  t = t.replace(/\s+/g, ' ').trim();
+  return t;
+}
+
+function numeroPorExtenso(n) {
+  if (n === 0) return 'zero';
+  const unidades = ['', 'um', 'dois', 'tres', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove'];
+  const dezenas = ['', 'dez', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+  const especiais = ['dez', 'onze', 'doze', 'treze', 'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
+  const centenas = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+
+  function convertGroup(num) {
+    if (num === 0) return '';
+    if (num === 100) return 'cem';
+    let r = '';
+    const c = Math.floor(num / 100);
+    const d = Math.floor((num % 100) / 10);
+    const u = num % 10;
+    if (c > 0) r += centenas[c];
+    if (num % 100 < 20 && num % 100 >= 10) {
+      if (c > 0) r += ' e ';
+      r += especiais[num % 100 - 10];
+    } else {
+      if (d > 0) { if (r) r += ' e '; r += dezenas[d]; }
+      if (u > 0) { if (r) r += ' e '; r += unidades[u]; }
+    }
+    return r;
+  }
+
+  if (n < 1000) return convertGroup(n);
+  const milhares = Math.floor(n / 1000);
+  const resto = n % 1000;
+  let r = '';
+  if (milhares === 1) r = 'mil';
+  else r = convertGroup(milhares) + ' mil';
+  if (resto > 0) r += ' e ' + convertGroup(resto);
+  return r;
+}
+
+function buildNarrationText() {
+  const lines = [];
+  lines.push('Atencao, clientes do ' + state.storeName + '!');
+  state.products.forEach((p, i) => {
+    if (i === 0) {
+      lines.push('Oferta imperdivel: ' + p.name + ' por apenas ' + priceToWords(p.newPrice) + '!');
+    } else {
+      lines.push('Temos tambem ' + p.name + ' por ' + priceToWords(p.newPrice) + '!');
+    }
+  });
+  const badgeClean = state.selectedBadge.replace(/[^\w\s]/g, '').trim();
+  lines.push(badgeClean + ' que e por tempo limitado!');
+  lines.push('Nao perca esta oportunidade!');
+  return normalizeForTTS(lines.join(' '));
+}
+
+async function buildSceneHTML(duration) {
+  const dur = Math.max(duration || 10, 8);
+  const templateId = state.selectedTemplateId || 'classica';
+  
+  let templateHtml = '';
+  try {
+    const res = await fetch('/templates/' + templateId + '.html');
+    if (res.ok) {
+      templateHtml = await res.text();
+    }
+  } catch(e) {
+    console.error('Erro ao buscar template:', e);
+  }
+  
+  const product = state.products[0];
+  const priceParts = product.newPrice.split(/[,.]/);
+  const priceInt = priceParts[0] || '0';
+  const priceDec = priceParts[1] || '00';
+  
+  const priceSize = state.products.length > 2 ? 120 : 160;
+  const priceCentsSize = state.products.length > 2 ? 56 : 72;
+  
+  const isFlash = templateId === 'flash';
+  
+  if (templateHtml) {
+    templateHtml = templateHtml.replace(/{duration}/g, dur);
+    templateHtml = templateHtml.replace(/{price_int}/g, priceInt);
+    templateHtml = templateHtml.replace(/{price_dec}/g, priceDec);
+    templateHtml = templateHtml.replace(/{price_size}/g, priceSize);
+    templateHtml = templateHtml.replace(/{price_cents_size}/g, priceCentsSize);
+    templateHtml = templateHtml.replace(/{old_price}/g, product.oldPrice || '');
+    templateHtml = templateHtml.replace(/{product_name}/g, escapeHtml(product.name));
+    templateHtml = templateHtml.replace(/{product_detail}/g, '');
+    templateHtml = templateHtml.replace(/{store_name}/g, escapeHtml(state.storeName));
+    templateHtml = templateHtml.replace(/{validity}/g, '');
+    templateHtml = templateHtml.replace(/{unit}/g, '');
+    templateHtml = templateHtml.replace(/{banner_title}/g, isFlash ? '⚡ OFERTA ⚡' : 'OFERTA');
+    templateHtml = templateHtml.replace(/{banner_sub}/g, isFlash ? '' : state.storeName);
+    templateHtml = templateHtml.replace(/{tag_text}/g, state.selectedBadge || 'Oferta');
+    templateHtml = templateHtml.replace(/{bg1}/g, isFlash ? '#1a0000' : '#1a1a2e');
+    templateHtml = templateHtml.replace(/{bg2}/g, isFlash ? '#330000' : '#0f3460');
+    templateHtml = templateHtml.replace(/{accent1}/g, isFlash ? '#ff2222' : '#ffd700');
+    templateHtml = templateHtml.replace(/{accent2}/g, isFlash ? '#ff6600' : '#ff6b00');
+    return templateHtml;
+  }
+  
+  const bgGrad = isFlash ? 'linear-gradient(135deg,#1a0000,#330000)' : 'linear-gradient(135deg,#1a1a2e,#0f3460)';
+  const accentColor = isFlash ? '#ff2222' : '#ffd700';
+  const accentColor2 = isFlash ? '#ff6600' : '#ff6b00';
+  const tagBg = isFlash ? '#ff0000' : '#ffd700';
+  const titleText = isFlash ? '⚡ OFERTA ⚡' : 'OFERTA';
+  
+  let productCards = '';
+  state.products.forEach((p, i) => {
+    const pp = p.newPrice.split(/[,.]/);
+    const pi = pp[0] || '0';
+    const pd = pp[1] || '00';
+    const delay_val = (i * 0.3).toFixed(1);
+    productCards += '<div class="product-item" style="animation-delay:' + delay_val + 's">';
+    productCards += '<div class="p-price">R$ <span class="cents">' + pi + '</span>,' + pd + '</div>';
+    productCards += '<div class="p-name">' + escapeHtml(p.name) + '</div>';
+    if (p.oldPrice) productCards += '<div class="old-price">De: R$ ' + p.oldPrice + '</div>';
+    if (p.img) productCards += '<img class="p-img" src="' + p.img + '">';
+    productCards += '</div>';
+  });
+  
+  let html = '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+    '<style>*{margin:0;padding:0;box-sizing:border-box}' +
+    'body{background:#000;display:flex;justify-content:center;align-items:center;height:100vh;font-family:Arial,sans-serif}' +
+    '.card{width:1080px;height:1920px;background:' + bgGrad + ';position:relative;overflow:hidden}' +
+    '.top-banner{width:100%;padding:60px 80px 40px;text-align:center}' +
+    '.top-banner h1{font-size:64px;font-weight:900;text-transform:uppercase;letter-spacing:4px;background:linear-gradient(90deg,' + accentColor + ',' + accentColor2 + ');-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:fadeUp .8s ease-out both}' +
+    '.product-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 60px;gap:40px}' +
+    '.product-item{display:flex;flex-direction:column;align-items:center;animation:fadeUp .6s ease-out both}' +
+    '.product-item .p-price{font-size:' + priceSize + 'px;font-weight:900;line-height:1;background:linear-gradient(180deg,' + accentColor + ',' + accentColor2 + ');-webkit-background-clip:text;-webkit-text-fill-color:transparent}' +
+    '.product-item .p-price .cents{font-size:' + priceCentsSize + 'px;vertical-align:super}' +
+    '.product-item .p-name{font-size:38px;font-weight:700;text-align:center;line-height:1.3;color:white;margin-top:12px}' +
+    '.product-item .old-price{font-size:26px;color:#ff4444;text-decoration:line-through;margin-top:8px}' +
+    '.product-item .p-img{width:180px;height:180px;object-fit:contain;border-radius:12px;margin-top:12px;background:rgba(0,0,0,.3)}' +
+    '.bottom-info{width:100%;padding:40px 80px 60px;text-align:center;border-top:2px solid rgba(255,255,255,.1);animation:fadeIn .5s ease-out both}' +
+    '.bottom-info .store{font-size:26px;letter-spacing:6px;text-transform:uppercase;color:rgba(255,255,255,.4)}' +
+    '.tag{position:absolute;top:40px;right:-60px;background:' + tagBg + ';color:#fff;font-size:28px;font-weight:900;padding:15px 100px;transform:rotate(45deg);text-transform:uppercase;letter-spacing:2px;animation:tagIn .5s ease-out both;z-index:10}' +
+    '@keyframes fadeUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}' +
+    '@keyframes fadeIn{from{opacity:0}to{opacity:1}}' +
+    '@keyframes tagIn{from{opacity:0;transform:rotate(45deg) translateX(80px)}to{opacity:1;transform:rotate(45deg) translateX(0)}}' +
+    '</style></head><body>' +
+    '<div class="card" data-composition-id="builder" data-width="1080" data-height="1920" data-duration="' + dur + '" data-start="0">' +
+    '<div class="tag" style="animation-delay:.3s">' + state.selectedBadge + '</div>' +
+    '<div class="top-banner"><h1 style="animation-delay:.5s">' + titleText + '</h1></div>' +
+    '<div class="product-area">' + productCards + '</div>' +
+    '<div class="bottom-info"><div class="store">' + escapeHtml(state.storeName) + '</div></div>' +
+    '</div></body></html>';
+  return html;
+}
+
+async function generateVideo() {
+  state.isProcessing = true;
+  disableInput();
+  
+  try {
+    showSpinner('Gerenciando TTS...');
+    
+    const narrationText = buildNarrationText();
+    
+    showSpinner('Gerando narração de áudio...');
+    let audioBlob, audioDuration;
+    
+    try {
+      const ttsRes = await fetch('/tts-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: narrationText,
+          voice_name: state.voiceName,
+          max_new_tokens: 300
+        })
+      });
+      
+      if (!ttsRes.ok) {
+        const err = await ttsRes.text().catch(() => 'Erro desconhecido');
+        throw new Error('Falha ao gerar áudio: ' + err.slice(0, 200));
+      }
+      
+      audioBlob = await ttsRes.blob();
+      audioDuration = parseFloat(ttsRes.headers.get('X-Audio-Duration') || '10');
+    } catch(e) {
+      showError('Erro na geração de áudio: ' + e.message);
+      throw e;
+    }
+    
+    const audioUrl = URL.createObjectURL(audioBlob);
+    showSuccess('Áudio gerado! (' + audioDuration.toFixed(1) + 's)');
+    
+    showSpinner('Renderizando vídeo... (~1-2 min)');
+    let renderData;
+    
+    try {
+      const sceneHtml = await buildSceneHTML(audioDuration);
+      const outputName = 'chat_' + Date.now();
+      
+      const renderRes = await fetch('/render', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          custom_html: sceneHtml,
+          template: state.selectedTemplate,
+          output: outputName
+        })
+      });
+      
+      if (!renderRes.ok) {
+        const err = await renderRes.text().catch(() => 'Erro desconhecido');
+        throw new Error('Falha ao renderizar: ' + err.slice(0, 200));
+      }
+      
+      renderData = await renderRes.json().catch(() => ({ render_name: outputName }));
+    } catch(e) {
+      showError('Erro na renderização: ' + e.message);
+      throw e;
+    }
+    
+    showSpinner('Sincronizando áudio com vídeo...');
+    let finalBlob;
+    
+    try {
+      const renderName = renderData.render_name || ('chat_' + Date.now());
+      const muxForm = new FormData();
+      muxForm.append('audio', audioBlob, 'narration.wav');
+      muxForm.append('render_name', renderName);
+      
+      const muxRes = await fetch('/tts-mux', {
+        method: 'POST',
+        body: muxForm
+      });
+      
+      if (!muxRes.ok) {
+        const errText = await muxRes.text().catch(() => 'Erro desconhecido');
+        throw new Error('Falha ao sincronizar: ' + errText.slice(0, 200));
+      }
+      
+      finalBlob = await muxRes.blob();
+    } catch(e) {
+      showError('Erro na sincronização: ' + e.message);
+      throw e;
+    }
+    
+    const finalUrl = URL.createObjectURL(finalBlob);
+    showSuccess('Vídeo com narração criado!');
+    
+    let resultHtml = '<div style="margin-top:8px">';
+    resultHtml += '<video controls class="w-full rounded-lg" style="max-width:300px" src="' + finalUrl + '"></video><br>';
+    const fname = 'cartela_' + state.storeName.replace(/[^a-zA-Z0-9]/g, '_') + '.mp4';
+    resultHtml += '<a href="' + finalUrl + '" download="' + fname + '" style="display:inline-block;margin-top:12px;background:#16a34a;color:white;padding:12px 24px;border-radius:8px;font-weight:600;text-decoration:none">📥 Baixar Vídeo</a>';
+    resultHtml += '<div style="margin-top:8px;font-size:12px;color:#94a3b8">🎤 Voz: ' + state.voiceName + ' | ⏱️ Duração: ' + audioDuration.toFixed(1) + 's | 🎨 Template: ' + state.selectedTemplate + '</div>';
+    resultHtml += '</div>';
+    addMsg(resultHtml, 'bot');
+    
+    await delay(300);
+    await botSay('Pronto! 🎉 Vídeo criado para <b>' + escapeHtml(state.storeName) + '</b> com narração em <b>' + state.voiceName + '</b>.');
+    await delay(300);
+    await botSay('Quer criar <b>outro vídeo</b>? É só me dizer! 😊');
+    
+    state.step = 'welcome';
+    state.products = [];
+    state.productCount = 0;
+    setPlaceholder('Quero criar outro vídeo!');
+    
+  } catch(e) {
+    console.error('Erro na geração:', e);
+    if (!e.message.includes('Falha ao')) {
+      showError('Erro inesperado: ' + e.message);
+    }
+    await botSay('Houve um erro. O que deseja fazer?<br><span style="color:#94a3b8;font-size:13px">Digite "sim" para tentar novamente ou "loja" para recomeçar</span>');
+    state.step = 'confirm';
+    setPlaceholder('Sim, gerar vídeo!');
+  }
+  
+  state.isProcessing = false;
+}
+
+// ============ FILE UPLOAD ============
+chatInput.addEventListener('paste', async (e) => {
+  const items = e.clipboardData.items;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault();
+      if (state.step === 'ask_product_img') {
+        const file = item.getAsFile();
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+          chatInput.value = '';
+          await handleProductImg(ev.target.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        addMsg('📷 Imagem colada, mas só aceita na etapa de produto.', 'system');
+      }
+      return;
+    }
+  }
+});
+
+const fileInput = document.createElement('input');
+fileInput.type = 'file';
+fileInput.accept = 'image/*';
+fileInput.style.display = 'none';
+document.body.appendChild(fileInput);
+
+fileInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (state.step === 'ask_product_img') {
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      chatInput.value = '';
+      await handleProductImg(ev.target.result);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    addMsg('📷 Imagem selecionada, mas só aceita na etapa de produto.', 'system');
+  }
+  fileInput.value = '';
+});
+
+document.addEventListener('dragover', (e) => e.preventDefault());
+document.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    if (state.step === 'ask_product_img') {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        chatInput.value = '';
+        await handleProductImg(ev.target.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      addMsg('📷 Imagem arrastada, mas só aceita na etapa de produto.', 'system');
+    }
+  }
+});
+
+// ============ INIT ============
+async function init() {
+  await delay(300);
+  addMsg('<div style="text-align:center;font-size:12px;color:#475569;margin-bottom:4px">' + new Date().toLocaleString('pt-BR') + '</div>', 'system');
+  await botSay('Olá! 👋 Eu sou o <b>assistente de criação de vídeos</b>.<br><br>🎥 Quer criar um <b>vídeo de ofertas</b> para o seu negócio?', 800);
+  setPlaceholder('Quero criar um vídeo!');
+}
+
+init();
+</script>
+</body>
+</html>

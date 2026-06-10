@@ -1,0 +1,19 @@
+[Unit]
+Description=Jean Slim VT Varejo AI Agent
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/vt-backend
+ExecStart=/opt/vt-backend/vt-backend
+Restart=always
+RestartSec=5
+#Environment=DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+Environment=CARTELAS_API=http://localhost:3460
+Environment=RENDER_ASYNC_API=http://localhost:3461
+Environment=PORT=3470
+Environment=PATH=/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+[Install]
+WantedBy=multi-user.target

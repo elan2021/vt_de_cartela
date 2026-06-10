@@ -1,0 +1,7 @@
+node_modules/
+renders/
+_build2/
+sessions/
+*.log
+*.bak
+vt-backend/vt-backend

@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "dependencies": {
+    "hyperframes": "*"
+  },
+  "type": "module"
+}

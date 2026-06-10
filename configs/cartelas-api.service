@@ -1,0 +1,15 @@
+[Unit]
+Description=Cartelas HyperFrames API
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/cartelas
+ExecStart=/usr/bin/node /opt/cartelas/api.js --port=3460
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

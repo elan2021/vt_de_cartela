@@ -1,0 +1,15 @@
+[Unit]
+Description=Render Async Server
+After=network.target cartelas-api.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/cartelas
+ExecStart=/usr/bin/node /opt/cartelas/render_async.js
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
