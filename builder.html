@@ -1344,8 +1344,10 @@ async function saveToTurso() {
       const t = await res.json();
       showToast('Template "' + name + '" salvo! (#' + t.id + ')', 'success');
     } else {
-      const err = await res.text();
-      showToast('Erro ao salvar: ' + err.slice(0, 100), 'error');
+      const err = await res.text().catch(() => '');
+      let msg = err;
+      try { const j = JSON.parse(err); if (j.error) msg = j.error; } catch(e) {}
+      showToast('Erro ao salvar: ' + msg.slice(0, 100), 'error');
     }
   } catch(e) {
     showToast('Erro de conexão: ' + e.message, 'error');
@@ -1360,7 +1362,12 @@ async function showTursoLoader() {
 
   try {
     const res = await fetch('/templates');
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      let msg = 'HTTP ' + res.status;
+      try { const j = JSON.parse(errBody); if (j.error) msg += ': ' + j.error; } catch(e) {}
+      throw new Error(msg);
+    }
     const data = await res.json();
     const templates = data.templates || [];
     if (templates.length === 0) {

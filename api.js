@@ -170,6 +170,7 @@ document.getElementById("form").addEventListener("submit", async (e) => {
       const list = await listTemplates();
       json(res, 200, { templates: list });
     } catch (e) {
+      console.error("[templates] GET /templates error:", e.message);
       json(res, 500, { error: e.message });
     }
     return;
@@ -183,6 +184,7 @@ document.getElementById("form").addEventListener("submit", async (e) => {
       if (!tmpl) { json(res, 404, { error: "Template not found" }); return; }
       json(res, 200, tmpl);
     } catch (e) {
+      console.error("[templates] GET /templates/:id error:", e.message);
       json(res, 500, { error: e.message });
     }
     return;
@@ -198,6 +200,7 @@ document.getElementById("form").addEventListener("submit", async (e) => {
         const tmpl = await createTemplate(body);
         json(res, 201, tmpl);
       } catch (e) {
+        console.error("[templates] POST /templates error:", e.message);
         json(res, 400, { error: e.message });
       }
     });
@@ -214,6 +217,7 @@ document.getElementById("form").addEventListener("submit", async (e) => {
         const tmpl = await updateTemplate(templatesMatch[1], body);
         json(res, 200, tmpl);
       } catch (e) {
+        console.error("[templates] PUT /templates/:id error:", e.message);
         json(res, 400, { error: e.message });
       }
     });
@@ -226,6 +230,7 @@ document.getElementById("form").addEventListener("submit", async (e) => {
       await deleteTemplate(templatesMatch[1]);
       json(res, 200, { ok: true });
     } catch (e) {
+      console.error("[templates] DELETE /templates/:id error:", e.message);
       json(res, 500, { error: e.message });
     }
     return;

@@ -1,7 +1,6 @@
 {
   "private": true,
   "dependencies": {
-    "@libsql/client": "^0.17.3",
     "hyperframes": "*"
   },
   "type": "module"
