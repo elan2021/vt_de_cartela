@@ -34,8 +34,8 @@ EXPOSE 3470
 
 # Script que sobe tudo
 RUN printf '#!/bin/sh\n\
-/opt/vt-backend/vt-backend &\nsleep 1\n\
-node /opt/cartelas/render_async.js --port=3461 &\nsleep 1\n\
-node /opt/cartelas/api.js --port=3460\n' > /start.sh && chmod +x /start.sh
+cd /opt/vt-backend && /opt/vt-backend/vt-backend &\nsleep 1\n\
+cd /opt/cartelas && node /opt/cartelas/render_async.js --port=3461 &\nsleep 1\n\
+cd /opt/cartelas && node /opt/cartelas/api.js --port=3460\n' > /start.sh && chmod +x /start.sh
 
 CMD ["/start.sh"]
