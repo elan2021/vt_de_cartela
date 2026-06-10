@@ -16,7 +16,7 @@ RUN npm install --production
 
 # Copiar codigo do cartelas (usa /opt/cartelas/ que esta hardcoded no codigo)
 COPY api.js builder.html chat.html ./
-COPY generate.js render_async.js tts.js ./
+COPY generate.js render_async.js tts.js turso.js ./
 COPY data.json dados_*.json ./
 COPY templates/ ./templates/
 RUN mkdir -p /opt/cartelas/renders

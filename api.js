@@ -4,6 +4,7 @@ import { join } from "path";
 import { generate } from "./generate.js";
 
 import { listVoices, generateTTS } from "./tts.js";
+import { listTemplates, getTemplate, createTemplate, updateTemplate, deleteTemplate } from "./turso.js";
 const PORT = parseInt(process.argv.find(a => a.startsWith("--port="))?.split("=")[1] || process.env.PORT || "3459", 10);
 const TEMPLATES_DIR = join(import.meta.dirname, "templates");
 const RENDERS_DIR = join(import.meta.dirname, "renders");
@@ -155,6 +156,75 @@ document.getElementById("form").addEventListener("submit", async (e) => {
     try {
       const voices = await listVoices();
       json(res, 200, { voices });
+    } catch (e) {
+      json(res, 500, { error: e.message });
+    }
+    return;
+  }
+
+  // === Template CRUD (Turso) ===
+
+  // GET /templates — list all
+  if (path === "/templates" && req.method === "GET") {
+    try {
+      const list = await listTemplates();
+      json(res, 200, { templates: list });
+    } catch (e) {
+      json(res, 500, { error: e.message });
+    }
+    return;
+  }
+
+  // GET /templates/:id — get one
+  const templatesMatch = path.match(/^\/templates\/(\d+)$/);
+  if (templatesMatch && req.method === "GET") {
+    try {
+      const tmpl = await getTemplate(templatesMatch[1]);
+      if (!tmpl) { json(res, 404, { error: "Template not found" }); return; }
+      json(res, 200, tmpl);
+    } catch (e) {
+      json(res, 500, { error: e.message });
+    }
+    return;
+  }
+
+  // POST /templates — create
+  if (path === "/templates" && req.method === "POST") {
+    const chunks = [];
+    req.on("data", chunk => chunks.push(chunk));
+    req.on("end", async () => {
+      try {
+        const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+        const tmpl = await createTemplate(body);
+        json(res, 201, tmpl);
+      } catch (e) {
+        json(res, 400, { error: e.message });
+      }
+    });
+    return;
+  }
+
+  // PUT /templates/:id — update
+  if (templatesMatch && req.method === "PUT") {
+    const chunks = [];
+    req.on("data", chunk => chunks.push(chunk));
+    req.on("end", async () => {
+      try {
+        const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+        const tmpl = await updateTemplate(templatesMatch[1], body);
+        json(res, 200, tmpl);
+      } catch (e) {
+        json(res, 400, { error: e.message });
+      }
+    });
+    return;
+  }
+
+  // DELETE /templates/:id — delete
+  if (templatesMatch && req.method === "DELETE") {
+    try {
+      await deleteTemplate(templatesMatch[1]);
+      json(res, 200, { ok: true });
     } catch (e) {
       json(res, 500, { error: e.message });
     }
