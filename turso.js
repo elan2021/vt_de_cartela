@@ -56,8 +56,9 @@ async function tursoFetch(sql, args = []) {
     throw new Error(`Turso error: ${resp.error?.message || JSON.stringify(resp.error)}`);
   }
 
-  const cols = resp.response?.cols || [];
-  const rows = (resp.response?.rows || []).map((r) => {
+  const resultResp = resp.response?.result || resp.response;
+  const cols = resultResp?.cols || [];
+  const rows = (resultResp?.rows || []).map((r) => {
     const row = {};
     r.forEach((cell, i) => {
       const colName = cols[i]?.name || `col${i}`;
